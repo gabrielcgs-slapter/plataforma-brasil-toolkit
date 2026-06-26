@@ -1,0 +1,26 @@
+[
+  {
+    "description": "Tabela de trâmites — marcar linhas para estilo/acesso",
+    "trigger": "load",
+    "selector": "[id$='tableTramiteApreciacaoProjeto:tb'] tr.rich-table-row",
+    "attributes": {
+      "data-pb-tramite": "true"
+    }
+  },
+  {
+    "description": "Painéis expansíveis RichFaces — marcar cabeçalhos",
+    "trigger": "load",
+    "selector": ".rich-stglpanel-header",
+    "attributes": {
+      "data-pb-panel": "true"
+    }
+  },
+  {
+    "description": "Bloco de detalhes do projeto — identificação semântica",
+    "trigger": "load",
+    "selector": "#detalheUsuario",
+    "attributes": {
+      "data-pb-role": "user-info"
+    }
+  }
+]

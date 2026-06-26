@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Plataforma Brasil Toolkit",
+  "version": "1.1.0",
+  "description": "Ferramentas de DOM para a Plataforma Brasil (detalharProjetoAgrupadorApreciacao)",
+  "permissions": ["activeTab", "scripting", "storage", "clipboardWrite"],
+  "host_permissions": [
+    "https://plataformabrasil.saude.gov.br/*"
+    ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://plataformabrasil.saude.gov.br/*detalharProjetoAgrupadorApreciacao*",
+        "https://plataformabrasil.saude.gov.br/*gerirPesquisaAgrupador*",
+        "https://plataformabrasil.saude.gov.br/*detalharProjetoRlCentroPartCop*"
+      ],
+      "js": ["lib/extractor.js", "content/attribute-config.js", "content/content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://plataformabrasil.saude.gov.br/login.jsf"],
+      "js": ["content/login-banner.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "background": {
+    "service_worker": "background/service_worker.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self'; font-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["config/attributes.json"],
+      "matches": [
+        "https://plataformabrasil.saude.gov.br/*"
+      ]
+    }
+  ]
+}

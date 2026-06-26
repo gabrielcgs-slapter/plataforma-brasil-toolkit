@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="fa/all.min.css">
+</head>
+<body>
+  <div id="header">
+    <img id="title-logo" src="logo_platBR.png" alt="Plataforma Brasil">
+    <div id="header-controls">
+      <button id="btn-preferences" title="Preferências">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+      <span id="status-dot" class="dot dot-off" title="Página não detectada"></span>
+    </div>
+  </div>
+
+  <div id="actions">
+    <button data-action="copyData" class="btn">
+      <i class="fa-regular fa-clipboard"></i> Copiar dados do projeto
+    </button>
+    <button data-action="togglePanels" class="btn">
+      <i class="fa-solid fa-chevron-down"></i> Expandir / Colapsar seções
+    </button>
+    <button data-action="abrirArvore" class="btn">
+      <i class="fa-solid fa-sitemap"></i> Abrir árvore de documentos
+    </button>
+    <button id="btn-open-protocols" class="btn btn-protocols">
+      <i class="fa-solid fa-magnifying-glass"></i> Lista de protocolos
+    </button>
+    <button data-action="submeterNotificacao" class="btn">
+      <i class="fa-regular fa-share-from-square"></i> Submeter notificação
+    </button>
+    <button data-action="submeterEmenda" class="btn">
+      <i class="fa-solid fa-plus"></i> Enviar emenda
+    </button>
+    <div class="section-divider"></div>
+    <button id="btn-salvar-e-imprimir" class="btn"><i class="fa-regular fa-file-pdf"></i> Imprimir / Salvar PDF</button>
+
+  </div>
+
+  <!-- Painel de protocolos (oculto por padrão) -->
+  <div id="protocols-panel" class="hidden">
+    <div id="protocols-header">
+      <button id="btn-back" class="btn-icon"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+      <span>Lista de Protocolos</span>
+    </div>
+
+    <div id="protocols-add-row">
+      <button id="btn-show-add" class="btn btn-add"><i class="fa-solid fa-plus"></i> Adicionar Protocolo</button>
+    </div>
+
+    <div id="protocols-form" class="hidden">
+      <input id="input-nome" type="text" placeholder="Nome (ex: Estudo)" maxlength="25" />
+      <div id="protocols-caae-auto" class="hidden">
+        <span id="protocols-caae-value"></span>
+      </div>
+      <div id="protocols-form-actions">
+        <button id="btn-add-confirm" class="btn">Adicionar</button>
+        <button id="btn-add-cancel" class="btn btn-cancel">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="protocols-list"></div>
+  </div>
+
+  <!-- Painel de preferências (oculto por padrão) -->
+  <div id="preferences-panel" class="hidden">
+    <div id="preferences-header">
+      <button id="btn-pref-back" class="btn-icon"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+      <span>Preferências</span>
+    </div>
+    <div id="preferences-content">
+      <div class="pref-item">
+        <span class="pref-label">Ocultar aviso da página inicial</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-hide-banner">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="pref-item">
+        <span class="pref-label">Redimensionar árvore de documentos</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-resize-tree">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="pref-item">
+        <span class="pref-label">Aumentar quadro dos protocolos</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-enlarge-quadro">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedback"></div>
+  <script src="protocols.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
