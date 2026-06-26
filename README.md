@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="popup/logo_platBR.png" alt="Plataforma Brasil Toolkit" width="320">
 </p>
 
@@ -38,6 +38,8 @@
 
 <img src="exemplos/popup_ex.png" alt="Popup principal">
 <img src="exemplos/preferencias.png" alt="Painel de preferências">
+<img src="exemplos/projeto.png" alt="Exemplo de projeto">
+
 
 <!-- Adicione imagens aqui:
 <img src="docs/screenshots/popup.png" alt="Popup principal" width="300">
@@ -172,20 +174,6 @@ Abra uma [issue](../../issues) descrevendo:
 ### Sugestões de funcionalidades
 
 Abra uma [issue](../../issues) com a etiqueta `enhancement` descrevendo a funcionalidade desejada e o caso de uso.
-
----
-
-## Desenvolvimento local
-
-```bash
-# Instalar dependências (apenas para testes)
-npm install
-
-# Executar testes
-npm test
-```
-
-A extensão não possui etapa de build — os arquivos são carregados diretamente pelo Chrome.
 
 ---
 
