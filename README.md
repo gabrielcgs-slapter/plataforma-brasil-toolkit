@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="popup/logo_platBR.png" alt="Plataforma Brasil Toolkit" width="320">
 </p>
 
@@ -11,6 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Manifest-V3-blue" alt="Manifest V3">
   <img src="https://img.shields.io/badge/Chrome-Extension-yellow?logo=googlechrome" alt="Chrome Extension">
+  <img src="https://img.shields.io/badge/version-1.2.0-informational" alt="Versão 1.2.0">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs Welcome">
 </p>
@@ -28,7 +29,8 @@
 | **Lista de protocolos** | Salva projetos por nome + CAAE e navega diretamente para eles com um clique (deve estar logado) |
 | **Submeter notificação** | Localiza e clica no botão de Enviar Notificação, paginando automaticamente se necessário |
 | **Enviar emenda** | Localiza e clica no botão de Submeter Emenda, paginando automaticamente se necessário |
-| **Imprimir / Salvar PDF** | Abre o diálogo de impressão do navegador para salvar em PDF |
+| **Imprimir / Salvar PDF** | Baixa automaticamente o PDF com nome `CAAE_yyyy_mm_dd.pdf` e em seguida abre o diálogo de impressão do navegador |
+| **Painel flutuante (overlay)** | Exibe um painel arrastável sobre a página com todas as ferramentas do popup — ativado em Preferências → "Exibir painel sobre a página" |
 | **Ocultar aviso da página inicial** | Oculta popup da página inicial |
 | **SUGESTÕES** | A próxima sugestão pode ser sua |
 
@@ -107,6 +109,9 @@ O ícone da extensão ficará visível na barra do Chrome e você poderá acessa
 | `activeTab` | Acessa a aba atual para interagir com a página da Plataforma Brasil |
 | `scripting` | Injeta os scripts de conteúdo que executam as ações na página |
 | `storage` | Armazena localmente a lista de protocolos salvos e o estado dos botões de alternância |
+| `clipboardWrite` | Copia dados do projeto para a área de transferência |
+| `debugger` | Gera o PDF via `Page.printToPDF` da Chrome Debugger API antes de abrir o diálogo de impressão |
+| `downloads` | Salva o PDF gerado automaticamente na pasta de downloads com nome `CAAE_yyyy_mm_dd.pdf` |
 
 A extensão opera **exclusivamente** no domínio `plataformabrasil.saude.gov.br`.
 

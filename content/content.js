@@ -11,6 +11,10 @@
   const INITIAL_DELAY = 500;
   const MAX_PAGES     = 50;
 
+  function isExtensionContextValid() {
+    try { return !!chrome.runtime?.id; } catch { return false; }
+  }
+
   // ── Layout ─────────────────────────────────────────────────────────────
 
   function injectLayoutStyles() {
@@ -98,6 +102,7 @@
     window.__pbEnlargeWatcher = true;
 
     const enforce = () => {
+      if (!isExtensionContextValid()) return;
       chrome.storage.local.get('enlargeQuadro', function (result) {
         if (!result.enlargeQuadro) return;
         const el = document.querySelector(_ENLARGED_SEL);
@@ -160,16 +165,29 @@
   }
 
   function findNotificacaoBtn(doc) {
-    return doc.querySelector('a[title="Enviar Notificação"]') ?? null;
+    const table = doc.querySelector('#formDetalharProjeto\\:tabelaApreciacoesProjetos');
+    if (!table) return null;
+    return table.querySelector('a img[src*="ico_notificar.png"]')?.closest('a') ?? null;
   }
 
-  function findPaginacaoBtn(doc) {
+  function findFastforwardBtn(doc) {
     const table = doc.querySelector('#formDetalharProjeto\\:tabelaApreciacoesProjetos');
     if (!table) return null;
     return table.querySelector('td.rich-datascr-button[onclick*="fastforward"]') ?? null;
   }
 
-  // eslint-disable-next-line no-unused-vars -- usada em tests/submeter-notificacao.test.js
+  // Header ordenável "Apreciação" da tabela de apreciações. O id é gerado pelo
+  // JSF (j_id*), então casamos pelo texto do <span> dentro do <a>.
+  function findSortApreciacaoBtn(doc) {
+    const table = doc.querySelector('#formDetalharProjeto\\:tabelaApreciacoesProjetos');
+    if (!table) return null;
+    for (const a of table.querySelectorAll('a.rich-table-sortable-header')) {
+      const span = a.querySelector('span');
+      if (span && span.textContent.trim() === 'Apreciação') return a;
+    }
+    return null;
+  }
+
   function waitForTableChange(tableEl, timeout = 5000, debounce = 300) {
     return new Promise((resolve, reject) => {
       let debounceTimer;
@@ -191,30 +209,44 @@
   }
 
   function findEmendaBtn(doc) {
-    return doc.querySelector('a[title="Submeter Emenda"]') ?? null;
+    const table = doc.querySelector('#formDetalharProjeto\\:tabelaApreciacoesProjetos');
+    if (!table) return null;
+    return table.querySelector('a img[src*="ico_adicionar.png"], a img[src*="ico_editar.png"]')?.closest('a') ?? null;
   }
 
-  async function paginateUntilFound(findFn, notFoundMsg) {
+  async function paginateUntilFound(findFn, notFoundMsg, { sortFn } = {}) {
+    const table = document.querySelector('#formDetalharProjeto\\:tabelaApreciacoesProjetos');
+    if (!table) return { ok: false, error: notFoundMsg };
+
+    let sorted = false;
     for (let i = 0; i < MAX_PAGES; i++) {
       const btn = findFn(document);
       if (btn) { btn.click(); return { ok: true }; }
-      const pgBtn = findPaginacaoBtn(document);
+
+      // Antes de paginar, ordena a tabela uma única vez para trazer a apreciação
+      // relevante para a página visível, e procura o botão de novo.
+      if (!sorted && sortFn) {
+        sorted = true;
+        const sortBtn = sortFn(document);
+        if (sortBtn) {
+          sortBtn.click();
+          try {
+            await waitForTableChange(table, POLL_TIMEOUT, POLL_INTERVAL);
+          } catch {
+            return { ok: false, error: 'Timeout aguardando carregamento da página' };
+          }
+          continue;
+        }
+      }
+
+      const pgBtn = findFastforwardBtn(document);
       if (!pgBtn) return { ok: false, error: notFoundMsg };
       pgBtn.click();
-      const loaded = await new Promise(resolve => {
-        const maxAttempts = Math.ceil(POLL_TIMEOUT / POLL_INTERVAL);
-        let attempts = 0;
-        setTimeout(() => {
-          const timer = setInterval(() => {
-            if (findFn(document) || findPaginacaoBtn(document)) {
-              clearInterval(timer); resolve(true);
-            } else if (++attempts >= maxAttempts) {
-              clearInterval(timer); resolve(false);
-            }
-          }, POLL_INTERVAL);
-        }, INITIAL_DELAY);
-      });
-      if (!loaded) return { ok: false, error: 'Timeout aguardando carregamento da página' };
+      try {
+        await waitForTableChange(table, POLL_TIMEOUT, POLL_INTERVAL);
+      } catch {
+        return { ok: false, error: 'Timeout aguardando carregamento da página' };
+      }
     }
     return { ok: false, error: `${notFoundMsg} após percorrer todas as páginas` };
   }
@@ -231,6 +263,14 @@
 
     const btn = document.getElementById('gerirPesquisaForm:idBtnBuscarProjPesquisa');
     if (!btn) return { ok: false, error: 'Botão de busca não encontrado' };
+
+    const clearFields = ['gerirPesquisaForm:titulo', 'gerirPesquisaForm:noPesquisadorPrincipal', 'gerirPesquisaForm:palavraChave'];
+    for (const id of clearFields) {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.dispatchEvent(new Event('change')); }
+    }
+    const tipoVinculo = document.getElementById('gerirPesquisaForm:j_id119');
+    if (tipoVinculo) { tipoVinculo.value = ''; tipoVinculo.dispatchEvent(new Event('change')); }
 
     field.value = caae;
     field.dispatchEvent(new Event('change'));
@@ -319,7 +359,9 @@
   }
 
   async function actionSubmeterNotificacao() {
-    return paginateUntilFound(findNotificacaoBtn, 'Botão de notificação não encontrado');
+    return paginateUntilFound(findNotificacaoBtn, 'Botão de notificação não encontrado', {
+      sortFn: findSortApreciacaoBtn,
+    });
   }
 
   // ── Abrir projeto salvo ────────────────────────────────────────────────
@@ -360,6 +402,7 @@
   // descartando as marcações/estilos da extensão. Reaplica tudo ao fim do AJAX.
 
   function reapplyAll() {
+    if (!isExtensionContextValid()) return;
     applyAttributeConfig(CONFIG_URL, document, 'load').catch(() => {});
     chrome.storage.local.get(['resizeTree', 'enlargeQuadro'], function (result) {
       if (result.resizeTree) applyResizeArvore(true);
@@ -408,6 +451,7 @@
     if (!result.resizeTree) return;
     const _deadline = Date.now() + 15000;
     (function _tryApply() {
+      if (!isExtensionContextValid()) return;
       if (applyResizeArvore(true)) return;
       if (Date.now() < _deadline) setTimeout(_tryApply, 300);
     })();
@@ -417,6 +461,7 @@
     if (!result.enlargeQuadro) return;
     const _deadline = Date.now() + 15000;
     (function _tryApply() {
+      if (!isExtensionContextValid()) return;
       if (applyEnlargeQuadro(true)) return;
       if (Date.now() < _deadline) setTimeout(_tryApply, 300);
     })();
@@ -435,6 +480,14 @@
       if (Date.now() < _deadline) setTimeout(_checkDetalhar, 300);
     }, 500);
   }
+
+  window.__pbExt = {
+    runAction(action, msg = {}) {
+      const fn = ACTIONS[action];
+      if (!fn) return Promise.resolve({ ok: false, error: `Ação desconhecida: ${action}` });
+      return Promise.resolve().then(() => fn(msg));
+    },
+  };
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (sender.id !== chrome.runtime.id) return;

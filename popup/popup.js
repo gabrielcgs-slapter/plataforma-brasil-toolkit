@@ -118,6 +118,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  const toggleOverlay = document.getElementById('toggle-show-overlay');
+  const overlayStored = await chrome.storage.local.get('showOverlay');
+  toggleOverlay.checked = Boolean(overlayStored.showOverlay);
+  if (!onPage) toggleOverlay.disabled = true;
+  toggleOverlay.addEventListener('change', async () => {
+    await chrome.storage.local.set({ showOverlay: toggleOverlay.checked });
+  });
+
   document.getElementById('status-dot').className = `dot ${onPage ? 'dot-on' : 'dot-off'}`;
   document.getElementById('status-dot').title = onPage
     ? 'Página Plataforma Brasil detectada'
@@ -342,11 +350,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       btnSalvarEImprimir.addEventListener('click', async () => {
         btnSalvarEImprimir.disabled = true;
-        const result = await sendAction(tab.id, 'imprimir');
+
+        // Tenta obter CAAE para usar como nome do arquivo (melhor esforço)
+        const extractResult = await sendAction(tab.id, 'extractProtocolData');
+        const today = new Date();
+        const dateSuffix = [
+          today.getFullYear(),
+          String(today.getMonth() + 1).padStart(2, '0'),
+          String(today.getDate()).padStart(2, '0'),
+        ].join('_');
+        const filename = (extractResult.ok && extractResult.caae)
+          ? `${extractResult.caae}_${dateSuffix}.pdf`
+          : `plataforma_brasil_${dateSuffix}.pdf`;
+
+        // Salva PDF via background (usa Chrome Debugger API / Page.printToPDF)
+        const pdfResult = await chrome.runtime.sendMessage({ action: 'salvarPDF', tabId: tab.id, filename });
+
+        if (!pdfResult?.ok) {
+          showFeedback(`Erro ao salvar PDF: ${pdfResult?.error ?? 'desconhecido'}`, true);
+          btnSalvarEImprimir.disabled = false;
+          return;
+        }
+
+        // Depois abre diálogo de impressão
+        const printResult = await sendAction(tab.id, 'imprimir');
         showFeedback(
-          result.ok ? 'Diálogo de impressão aberto.' : `Erro: ${result.error}`,
-          !result.ok
+          printResult.ok
+            ? 'PDF salvo. Diálogo de impressão aberto.'
+            : `PDF salvo. Erro na impressão: ${printResult.error}`,
+          !printResult.ok
         );
+
         btnSalvarEImprimir.disabled = false;
       });
     }

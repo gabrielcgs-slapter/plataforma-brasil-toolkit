@@ -1,0 +1,55 @@
+/* Ajustes exclusivos do overlay (não aplicados ao popup normal) */
+
+body { border: none; }
+
+#header { cursor: grab; }
+#header:active { cursor: grabbing; }
+
+/* Grid 2×2: todos os elementos com célula de 18×18px
+   [✕] [−]
+   [⚙] [●]                                        */
+#header-controls {
+  display: grid;
+  grid-template-columns: 18px 18px;
+  gap: 3px;
+  align-items: center;
+  justify-items: center;
+}
+
+/* Gear fica no mesmo tamanho e alinhamento que os demais no overlay */
+#header-controls #btn-preferences {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 10px;
+}
+
+#btn-overlay-close,
+#btn-overlay-minimize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--white-a70);
+  cursor: pointer;
+  transition: color var(--dur-15), background var(--dur-15);
+}
+#btn-overlay-close:hover  { background: rgba(220, 50, 50, 0.30); color: var(--white); }
+#btn-overlay-minimize:hover { background: var(--white-a12); color: var(--white); }
+
+/* Estado minimizado: oculta tudo abaixo do header */
+body.minimized #actions,
+body.minimized #protocols-panel,
+body.minimized #preferences-panel,
+body.minimized #feedback { display: none; }

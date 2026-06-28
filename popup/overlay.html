@@ -3,12 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="overlay.css">
   <link rel="stylesheet" href="fa/all.min.css">
 </head>
 <body>
   <div id="header">
     <img id="title-logo" src="logo_platBR.png" alt="Plataforma Brasil">
     <div id="header-controls">
+      <button id="btn-overlay-close" title="Fechar painel">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <button id="btn-overlay-minimize" title="Minimizar">
+        <i class="fa-solid fa-minus"></i>
+      </button>
       <button id="btn-preferences" title="Preferências">
         <i class="fa-solid fa-gear"></i>
       </button>
@@ -37,7 +44,6 @@
     </button>
     <div class="section-divider"></div>
     <button id="btn-salvar-e-imprimir" class="btn"><i class="fa-regular fa-file-pdf"></i> Imprimir / Salvar PDF</button>
-
   </div>
 
   <!-- Painel de protocolos (oculto por padrão) -->
@@ -106,5 +112,6 @@
   <div id="feedback"></div>
   <script src="protocols.js"></script>
   <script src="popup.js"></script>
+  <script src="overlay-init.js"></script>
 </body>
 </html>
