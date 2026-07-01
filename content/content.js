@@ -11,6 +11,11 @@
   const INITIAL_DELAY = 500;
   const MAX_PAGES     = 50;
 
+  // ── Cache de preferências ──────────────────────────────────────────────
+  // Lido uma vez no startup; atualizado via chrome.storage.onChanged.
+  // Evita leitura assíncrona de storage a cada render AJAX em reapplyAll.
+  const _prefs = { resizeTree: false, enlargeQuadro: false };
+
   function isExtensionContextValid() {
     try { return !!chrome.runtime?.id; } catch { return false; }
   }
@@ -23,7 +28,7 @@
     style.textContent = `
       #geral         { width: 100% !important; max-width: none !important; }
       #conteudoImage { width: 100% !important; max-width: none !important; }
-      #conteudoFull  { width: 100% !important; max-width: none !important; }
+      #conteudoFull  { width: 100% !important; max-width: none !important; box-sizing: border-box !important; }
     `;
     document.head.appendChild(style);
   }
@@ -101,17 +106,30 @@
     if (window.__pbEnlargeWatcher) return;
     window.__pbEnlargeWatcher = true;
 
+    // Observer declarado antes de enforce para poder desconectá-lo se a extensão
+    // for recarregada com a aba aberta (contexto invalidado).
+    let observer;
+    const stopWatching = () => { observer?.disconnect(); };
+
     const enforce = () => {
-      if (!isExtensionContextValid()) return;
-      chrome.storage.local.get('enlargeQuadro', function (result) {
-        if (!result.enlargeQuadro) return;
-        const el = document.querySelector(_ENLARGED_SEL);
-        if (el && el.dataset.pbEnlarged !== 'true') applyEnlargeQuadro(true);
-      });
+      if (!isExtensionContextValid()) { stopWatching(); return; }
+      try {
+        chrome.storage.local.get('enlargeQuadro', function (result) {
+          // chrome.runtime.lastError sinaliza contexto perdido no callback async.
+          if (chrome.runtime.lastError) { stopWatching(); return; }
+          if (!result.enlargeQuadro) return;
+          const el = document.querySelector(_ENLARGED_SEL);
+          if (el && el.dataset.pbEnlarged !== 'true') applyEnlargeQuadro(true);
+        });
+      } catch {
+        // "Extension context invalidated" é lançado de forma síncrona quando a
+        // extensão foi recarregada. Para de observar para não repetir no console.
+        stopWatching();
+      }
     };
 
     // Cada partial render Ajax substitui o formulário — reavalia a cada mutação.
-    const observer = new MutationObserver(enforce);
+    observer = new MutationObserver(enforce);
     observer.observe(document.documentElement, { childList: true, subtree: true });
 
     // Toggle alternado no popup com a aba já aberta: aplica/remove imediatamente.
@@ -124,10 +142,14 @@
     enforce();
   }
 
-  const _ARVORE_PAINEL_ID = 'formDetalharProjeto:j_id209';
+  function findArvorePainel() {
+    // j_id209 é auto-gerado pelo JSF e pode mudar com atualizações do servidor.
+    // :has() garante que o resultado permanece dentro de #formDetalharProjeto.
+    return document.querySelector('#formDetalharProjeto .rich-panel:has(.rich-tree)') ?? null;
+  }
 
   function applyResizeArvore(enabled) {
-    const painel = document.getElementById(_ARVORE_PAINEL_ID);
+    const painel = findArvorePainel();
     if (!painel) return false;
     if (enabled) {
       painel.style.resize = 'both';
@@ -142,6 +164,8 @@
       painel.style.overflow = '';
       painel.style.minWidth = '';
       painel.style.maxWidth = '';
+      painel.style.minHeight = '';
+      painel.style.maxHeight = '';
     }
     return true;
   }
@@ -269,7 +293,7 @@
       const el = document.getElementById(id);
       if (el) { el.value = ''; el.dispatchEvent(new Event('change')); }
     }
-    const tipoVinculo = document.getElementById('gerirPesquisaForm:j_id119');
+    const tipoVinculo = document.querySelector('#gerirPesquisaForm select[onkeypress*="hotKeyPesquisar"]');
     if (tipoVinculo) { tipoVinculo.value = ''; tipoVinculo.dispatchEvent(new Event('change')); }
 
     field.value = caae;
@@ -315,9 +339,8 @@
             if (mutation.attributeName !== 'style') continue;
             const stopStyle  = statusStop.getAttribute('style')  || '';
             const startStyle = statusStart.getAttribute('style') || '';
-            const ajaxDone   = !stopStyle.includes('display: none') &&
-                               !stopStyle.includes('display:none')  &&
-                               startStyle.includes('display: none');
+            const ajaxDone   = !/display:\s*none/i.test(stopStyle) &&
+                               /display:\s*none/i.test(startStyle);
             if (ajaxDone) tryClickDetalhar();
           }
         });
@@ -404,10 +427,8 @@
   function reapplyAll() {
     if (!isExtensionContextValid()) return;
     applyAttributeConfig(CONFIG_URL, document, 'load').catch(() => {});
-    chrome.storage.local.get(['resizeTree', 'enlargeQuadro'], function (result) {
-      if (result.resizeTree) applyResizeArvore(true);
-      if (result.enlargeQuadro) applyEnlargeQuadro(true);
-    });
+    if (_prefs.resizeTree) applyResizeArvore(true);
+    if (_prefs.enlargeQuadro) applyEnlargeQuadro(true);
   }
 
   function installReapplyObserver() {
@@ -465,6 +486,17 @@
       if (applyEnlargeQuadro(true)) return;
       if (Date.now() < _deadline) setTimeout(_tryApply, 300);
     })();
+  });
+
+  // Carrega _prefs uma vez; mantém sincronizado via onChanged.
+  chrome.storage.local.get(['resizeTree', 'enlargeQuadro'], function (result) {
+    _prefs.resizeTree   = Boolean(result.resizeTree);
+    _prefs.enlargeQuadro = Boolean(result.enlargeQuadro);
+  });
+  chrome.storage.onChanged.addListener(function (changes, area) {
+    if (area !== 'local') return;
+    if ('resizeTree'    in changes) _prefs.resizeTree   = Boolean(changes.resizeTree.newValue);
+    if ('enlargeQuadro' in changes) _prefs.enlargeQuadro = Boolean(changes.enlargeQuadro.newValue);
   });
 
   installReapplyObserver();

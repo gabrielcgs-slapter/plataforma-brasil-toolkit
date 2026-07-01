@@ -1,15 +1,18 @@
 // content/attribute-config.js
+let _cachedRules = null;
+
 async function applyAttributeConfig(rulesUrl, doc, trigger) {
-  let rules;
-  try {
-    const res = await fetch(rulesUrl);
-    rules = await res.json();
-  } catch (e) {
-    console.warn('[pb-toolkit] attributes.json:', e.message);
-    return;
+  if (!_cachedRules) {
+    try {
+      const res = await fetch(rulesUrl);
+      _cachedRules = await res.json();
+    } catch (e) {
+      console.warn('[pb-toolkit] attributes.json:', e.message);
+      return;
+    }
   }
   const target = doc ?? document;
-  const filtered = trigger ? rules.filter(r => r.trigger === trigger) : rules;
+  const filtered = trigger ? _cachedRules.filter(r => r.trigger === trigger) : _cachedRules;
   filtered.forEach(({ selector, attributes }) => {
     target.querySelectorAll(selector).forEach(el => {
       Object.entries(attributes).forEach(([attr, val]) => {
@@ -20,4 +23,6 @@ async function applyAttributeConfig(rulesUrl, doc, trigger) {
   });
 }
 
-if (typeof module !== 'undefined') module.exports = { applyAttributeConfig };
+function clearRulesCache() { _cachedRules = null; }
+
+if (typeof module !== 'undefined') module.exports = { applyAttributeConfig, clearRulesCache };
