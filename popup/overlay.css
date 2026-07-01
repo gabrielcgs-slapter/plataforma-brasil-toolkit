@@ -6,7 +6,7 @@ body { border: none; }
 #header:active { cursor: grabbing; }
 
 /* Grid 2×2: todos os elementos com célula de 18×18px
-   [✕] [−]
+   [−] [✕]
    [⚙] [●]                                        */
 #header-controls {
   display: grid;

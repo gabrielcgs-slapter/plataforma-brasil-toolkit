@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Plataforma Brasil Toolkit",
-  "version": "1.2.0",
+  "version": "1.3.1",
   "description": "Ferramentas de DOM para a Plataforma Brasil (detalharProjetoAgrupadorApreciacao)",
   "permissions": ["activeTab", "scripting", "storage", "clipboardWrite", "debugger", "downloads"],
   "host_permissions": [
@@ -34,7 +34,7 @@
       "matches": ["https://plataformabrasil.saude.gov.br/*"],
       "exclude_matches": ["https://plataformabrasil.saude.gov.br/login.jsf"],
       "js": ["content/overlay.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     },
     {
       "matches": ["https://plataformabrasil.saude.gov.br/login.jsf"],

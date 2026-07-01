@@ -6,9 +6,20 @@
   let host = null;
   let iframe = null;
   let dragCover = null;
+  let overlayAtivo = false; // espelho de "em evidência" reportado pelo iframe
 
+  // No document_start, document.body ainda não existe. Adia a criação até o body
+  // aparecer para que a overlay surja o mais cedo possível, sem esperar o
+  // document_idle (JSF carrega devagar e isso causava o sumiço a cada navegação).
   function createOverlay() {
     if (host) return;
+    if (!document.body) {
+      const obs = new MutationObserver(() => {
+        if (document.body) { obs.disconnect(); createOverlay(); }
+      });
+      obs.observe(document.documentElement, { childList: true });
+      return;
+    }
 
     host = document.createElement('div');
     host.id = '__pb-overlay-host';
@@ -39,14 +50,22 @@
 
     // ── Mensagens do iframe ─────────────────────────────────────────────────
     window.addEventListener('message', onIframeMessage);
+    document.addEventListener('mousedown', onPageMouseDown, true);
+    document.addEventListener('keydown',   onPageKeyDown,   true);
   }
 
   // Drag: o iframe envia __pbDragStart com as coordenadas do mouse relativas ao
   // viewport do iframe. Convertemos para o viewport da página somando o offset
   // do iframe e iniciamos o arrasto com um cover transparente para capturar
   // eventos de mouse globais enquanto o cursor está sobre o iframe.
+  // Só aceita mensagens vindas do iframe da própria extensão.
+  const _extOrigin = new URL(chrome.runtime.getURL('')).origin;
+
   function onIframeMessage(e) {
     if (!host) return;
+    if (e.origin !== _extOrigin) return;
+
+    if (e.data?.__pbOverlayAtivo) overlayAtivo = true;
 
     if (e.data?.__pbOverlaySize) {
       const { h, w } = e.data.__pbOverlaySize;
@@ -64,6 +83,24 @@
       const oy = pageY - hr.top;
       startDrag(ox, oy);
     }
+  }
+
+  // ── Evidência do painel + Esc ─────────────────────────────────────────────
+  // overlayAtivo espelha "em evidência" reportado pelo iframe. Um clique na
+  // página derruba a evidência e avisa o iframe. O Esc só é "consumido"
+  // (preventDefault) quando o painel está em evidência; caso contrário segue
+  // intacto para a página (fechar modais do RichFaces, cancelar campos etc.).
+  function onPageMouseDown(e) {
+    if (host && host.contains(e.target)) return; // clique no próprio painel
+    overlayAtivo = false;
+    iframe?.contentWindow?.postMessage({ __pbOverlayDeactivate: true }, _extOrigin);
+  }
+
+  function onPageKeyDown(e) {
+    if (e.key !== 'Escape' || !overlayAtivo) return;
+    e.preventDefault();
+    e.stopPropagation();
+    iframe?.contentWindow?.postMessage({ __pbOverlayEsc: true }, _extOrigin);
   }
 
   function startDrag(ox, oy) {
@@ -101,11 +138,14 @@
 
   function destroyOverlay() {
     window.removeEventListener('message', onIframeMessage);
+    document.removeEventListener('mousedown', onPageMouseDown, true);
+    document.removeEventListener('keydown',   onPageKeyDown,   true);
     dragCover?.remove();
     dragCover = null;
     host?.remove();
     host   = null;
     iframe = null;
+    overlayAtivo = false;
   }
 
   // ── Inicialização ─────────────────────────────────────────────────────────

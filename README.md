@@ -149,6 +149,47 @@ O código é aberto e auditável neste repositório.
 
 ---
 
+## Desenvolvimento
+
+### Pré-requisitos
+
+- Node.js v18+ (testado com v24.18.0)
+- Google Chrome (para carregar a extensão em modo desenvolvedor)
+
+### Setup
+
+```bash
+npm install
+```
+
+### Testes
+
+```bash
+npm test                                         # suíte completa (84 testes)
+npm test -- --testPathPattern=extractor          # um arquivo específico
+```
+
+### Benchmark
+
+```bash
+node benchmarks/bench.js
+```
+
+Mede `extractProjectData`, `extractProjectId` e `getTextAfterLabel` via jsdom.
+Os valores absolutos variam ±20-30% entre execuções — use para comparar antes/depois de uma mesma mudança. Resultados históricos em [`BENCHMARKS.md`](BENCHMARKS.md).
+
+### Carregar em modo desenvolvedor
+
+1. `chrome://extensions` → **Modo do desenvolvedor** ativo
+2. **Carregar sem compactação** → selecionar a pasta `ext_pb/`
+3. Após qualquer alteração em JS: botão ↺ (atualizar) na card da extensão
+
+### Arquitetura
+
+Consulte [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) para descrição dos componentes, fluxo de mensagens e decisões de design.
+
+---
+
 ## Contribuindo
 
 Contribuições são bem-vindas! Este é um repositório público e aberto a PRs, sugestões e relatos de problemas.
